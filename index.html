@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador PITICKETS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        main {
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #event-selector, #ticket-validation {
+            margin-top: 1rem;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        select, input, button {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #eventId, #validationMessage {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5); 
+            padding-top: 60px; 
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            border-radius: 8px 8px 0 0;
+            position: relative;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 0 0 8px 8px;
+            text-align: right;
+        }
+
+        .modal-button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+        }
+
+        .modal-button:hover {
+            background-color: #218838;
+        }
+
+        .close {
+            color: white;
+            position: absolute;
+            right: 20px;
+            top: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #ddd;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Validador PITICKETS 1.0</h1>
+    </header>
+    <main>
+        <section id="event-selector">
+            <label for="eventDropdown">SELECIONE UM EVENTO:</label>
+            <select id="eventDropdown">
+                <option value="">Selecione um evento</option>
+            </select>
+            <p id="eventId">ID do evento selecionado: <span id="selectedEventId"></span></p>
+        </section>
+        <section id="ticket-validation">
+            <label for="ticketCode">Código do Evento:</label>
+            <input type="text" id="ticketCode" placeholder="Digite o código do ingresso">
+            <button id="validateButton">Validar</button>
+            <p id="validationMessage"></p>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close">&times;</span>
+                <h2>Informações do Ingresso</h2>
+            </div>
+            <div class="modal-body">
+                <p><strong>Nome Evento:</strong> <span id="modalEventName"></span></p>
+                <p><strong>CPF do Comprador:</strong> <span id="modalBuyerCpf"></span></p>
+                <p id="modalStatusMessage">Validando informações...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2JMVHvH8FKs_GEl8JVRoRfPDjY9Ztcf8",
+            authDomain: "piauiticketsdb.firebaseapp.com",
+            databaseURL: "https://piauiticketsdb-default-rtdb.firebaseio.com",
+            projectId: "piauiticketsdb",
+            storageBucket: "piauiticketsdb.appspot.com",
+            messagingSenderId: "372256479753",
+            appId: "1:372256479753:web:8b5890e8c94dc75daaf6d8",
+            measurementId: "G-FMD1R115PG"
+        };
+
+        // Inicializando o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const eventDropdown = document.getElementById('eventDropdown');
+            const selectedEventId = document.getElementById('selectedEventId');
+            const validateButton = document.getElementById('validateButton');
+            const ticketCodeInput = document.getElementById('ticketCode');
+            const validationMessage = document.getElementById('validationMessage');
+            const infoModal = document.getElementById('infoModal');
+            const modalEventName = document.getElementById('modalEventName');
+            const modalBuyerCpf = document.getElementById('modalBuyerCpf');
+            const modalStatusMessage = document.getElementById('modalStatusMessage');
+            const modalValidateButton = document.getElementById('modalValidateButton');
+            const closeModal = document.querySelector('.close');
+
+            // Buscar eventos do Firebase
+            database.ref('/eventos').once('value')
+                .then(snapshot => {
+                    const eventos = snapshot.val();
+                    for (const eventId in eventos) {
+                        if (eventos.hasOwnProperty(eventId)) {
+                            const nomeEvento = eventos[eventId].nomeevento;
+                            const option = document.createElement('option');
+                            option.value = eventId;
+                            option.textContent = nomeEvento;
+                            eventDropdown.appendChild(option);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar eventos:', error);
+                });
+
+            // Manipular a seleção de eventos
+            eventDropdown.addEventListener('change', function() {
+                const selectedId = eventDropdown.value;
+                selectedEventId.textContent = selectedId ? selectedId : 'Nenhum evento selecionado';
+            });
+
+            // Abrir modal para validar ingresso
+            validateButton.addEventListener('click', function() {
+                const eventId = eventDropdown.value;
+                const ticketCode = ticketCodeInput.value.trim();
+
+                if (!eventId) {
+                    validationMessage.textContent = 'Por favor, selecione um evento.';
+                    validationMessage.className = 'error';
+                    return;
+                }
+
+                if (!ticketCode) {
+                    validationMessage.textContent = 'Por favor, insira o código do ingresso.';
+                    validationMessage.className = 'error';
+                    return;
+                }
+
+                // Buscar informações do ingresso e mostrar no modal
+                database.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).once('value')
+                    .then(snapshot => {
+                        const ticketData = snapshot.val();
+                        if (ticketData) {
+                            const nomeEvento = eventDropdown.options[eventDropdown.selectedIndex].text;
+                            const compradorCpf = ticketData.compradorcpf;
+
+                            modalEventName.textContent = nomeEvento;
+                            modalBuyerCpf.textContent = compradorCpf;
+                            modalStatusMessage.textContent = 'Validando informações...';
+                            infoModal.style.display = 'block';
+
+                            // Simular validação com delay
+                            setTimeout(() => {
+                                if (ticketData.isvalidaded) {
+                                    modalStatusMessage.textContent = 'Ingresso já validado.';
+                                    modalStatusMessage.className = 'error';
+                                } else {
+                                    modalStatusMessage.textContent = 'Ingresso validado com sucesso!';
+                                    modalStatusMessage.className = 'success';
+                                    database.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).update({
+                                        isvalidaded: true
+                                    });
+                                }
+                            }, 2000);
+                        } else {
+                            validationMessage.textContent = 'Código do ingresso não encontrado.';
+                            validationMessage.className = 'error';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao validar ingresso:', error);
+                    });
+            });
+
+            // Fechar modal
+            closeModal.addEventListener('click', function() {
+                infoModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target === infoModal) {
+                    infoModal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
