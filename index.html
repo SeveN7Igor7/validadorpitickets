@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Validador PITICKETS</title>
+    <script src="/html5-qrcode-master/minified/html5-qrcode.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -143,11 +144,16 @@
             color: #ddd;
             text-decoration: none;
         }
+
+        /* QR Code Scanner Styles */
+        #qr-reader {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Validador PITICKETS 1.0</h1>
+        <h1>Validador PITICKETS</h1>
     </header>
     <main>
         <section id="event-selector">
@@ -161,6 +167,8 @@
             <label for="ticketCode">Código do Evento:</label>
             <input type="text" id="ticketCode" placeholder="Digite o código do ingresso">
             <button id="validateButton">Validar</button>
+            <button id="scanQrButton">Escanear QR Code</button>
+            <div id="qr-reader"></div>
             <p id="validationMessage"></p>
         </section>
     </main>
@@ -183,6 +191,10 @@
     <!-- Scripts do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <!-- QR Code Scanner -->
+    <script src="/html5-qrcode-master/minified/html5-qrcode.min.js"></script>
+
     <script>
         // Configuração do Firebase
         const firebaseConfig = {
@@ -210,8 +222,9 @@
             const modalEventName = document.getElementById('modalEventName');
             const modalBuyerCpf = document.getElementById('modalBuyerCpf');
             const modalStatusMessage = document.getElementById('modalStatusMessage');
-            const modalValidateButton = document.getElementById('modalValidateButton');
             const closeModal = document.querySelector('.close');
+            const qrReader = document.getElementById('qr-reader');
+            const scanQrButton = document.getElementById('scanQrButton');
 
             // Buscar eventos do Firebase
             database.ref('/eventos').once('value')
@@ -237,25 +250,44 @@
                 selectedEventId.textContent = selectedId ? selectedId : 'Nenhum evento selecionado';
             });
 
-            // Abrir modal para validar ingresso
+            // Escanear QR Code
+            scanQrButton.addEventListener('click', function() {
+                if (qrReader.style.display === 'none' || qrReader.style.display === '') {
+                    qrReader.style.display = 'block';
+                    const html5QrCode = new Html5Qrcode("qr-reader");
+                    html5QrCode.start(
+                        { facingMode: "environment" },
+                        {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 }
+                        },
+                        qrCodeMessage => {
+                            ticketCodeInput.value = qrCodeMessage;
+                            qrReader.style.display = 'none';
+                            html5QrCode.stop();
+                        },
+                        errorMessage => {
+                            console.warn('QR Code scanning error:', errorMessage);
+                        }
+                    ).catch(err => {
+                        console.error('Erro ao iniciar o escaneamento de QR Code:', err);
+                    });
+                }
+            });
+
+            // Validar ingresso
             validateButton.addEventListener('click', function() {
                 const eventId = eventDropdown.value;
                 const ticketCode = ticketCodeInput.value.trim();
 
-                if (!eventId) {
-                    validationMessage.textContent = 'Por favor, selecione um evento.';
+                if (!eventId || !ticketCode) {
+                    validationMessage.textContent = 'Por favor, selecione um evento e insira o código do ingresso.';
                     validationMessage.className = 'error';
                     return;
                 }
 
-                if (!ticketCode) {
-                    validationMessage.textContent = 'Por favor, insira o código do ingresso.';
-                    validationMessage.className = 'error';
-                    return;
-                }
-
-                // Buscar informações do ingresso e mostrar no modal
-                database.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).once('value')
+                 // Buscar informações do ingresso e mostrar no modal
+                 database.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).once('value')
                     .then(snapshot => {
                         const ticketData = snapshot.val();
                         if (ticketData) {
@@ -290,11 +322,13 @@
                     });
             });
 
-            // Fechar modal
+
+            // Fechar o modal
             closeModal.addEventListener('click', function() {
                 infoModal.style.display = 'none';
             });
 
+            // Fechar o modal ao clicar fora dele
             window.addEventListener('click', function(event) {
                 if (event.target === infoModal) {
                     infoModal.style.display = 'none';
