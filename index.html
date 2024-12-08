@@ -14,11 +14,17 @@
         }
 
         header {
-            background-color: #333;
+            background-color: #000000;
             color: #fff;
             text-align: center;
             padding: 1rem 0;
         }
+        header .logo {
+            height: 40px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
 
         main {
             padding: 2rem;
@@ -139,12 +145,30 @@
             display: none;
             margin-top: 20px;
         }
+
+        @media (max-width: 600px) {
+    header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    header .logo {
+        height: 150px;
+        margin-right: 500px;
+    }
+
+    header h1 {
+        font-size: 1.2rem;
+    }
+}
     </style>
 </head>
 <body>
     <header>
-        <h1>Validador PITICKETS</h1>
+        <img src="logo.jpg" alt="Logo PITICKETS" class="logo">
     </header>
+    
     <main>
         <section id="event-selector">
             <label for="eventDropdown">Selecione um evento:</label>
