@@ -29,14 +29,6 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-        #event-selector, #ticket-validation {
-            margin-top: 1rem;
-        }
-
-        label {
-            font-weight: bold;
-        }
-
         select, input, button {
             margin-top: 0.5rem;
             padding: 0.5rem;
@@ -57,21 +49,6 @@
             background-color: #218838;
         }
 
-        #eventId, #validationMessage {
-            margin-top: 1rem;
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        .error {
-            color: red;
-        }
-
-        .success {
-            color: green;
-        }
-
-        /* Modal styles */
         .modal {
             display: none; 
             position: fixed; 
@@ -94,39 +71,7 @@
             max-width: 600px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-            padding: 10px;
-            background-color: #333;
-            color: white;
-            border-radius: 8px 8px 0 0;
-            position: relative;
-        }
-
-        .modal-body {
-            padding: 20px;
-        }
-
-        .modal-footer {
-            padding: 10px;
-            background-color: #f1f1f1;
-            border-radius: 0 0 8px 8px;
-            text-align: right;
-        }
-
-        .modal-button {
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 4px;
-        }
-
-        .modal-button:hover {
-            background-color: #218838;
+            text-align: center;
         }
 
         .close {
@@ -139,14 +84,59 @@
             cursor: pointer;
         }
 
-        .close:hover,
-        .close:focus {
+        .close:hover {
             color: #ddd;
-            text-decoration: none;
         }
 
-        /* QR Code Scanner Styles */
+        .icon {
+            font-size: 4rem;
+            margin: 20px 0;
+        }
+
+        .icon.correct {
+            color: #28a745;
+            animation: bounceIn 1s ease;
+        }
+
+        .icon.error {
+            color: #dc3545;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-5px);
+            }
+            50% {
+                transform: translateX(5px);
+            }
+            75% {
+                transform: translateX(-5px);
+            }
+            100% {
+                transform: translateX(0);
+            }
+        }
+
         #qr-reader {
+            display: none;
             margin-top: 20px;
         }
     </style>
@@ -157,14 +147,13 @@
     </header>
     <main>
         <section id="event-selector">
-            <label for="eventDropdown">SELECIONE UM EVENTO:</label>
+            <label for="eventDropdown">Selecione um evento:</label>
             <select id="eventDropdown">
                 <option value="">Selecione um evento</option>
             </select>
-            <p id="eventId">ID do evento selecionado: <span id="selectedEventId"></span></p>
         </section>
         <section id="ticket-validation">
-            <label for="ticketCode">Código do Evento:</label>
+            <label for="ticketCode">Código do Ingresso:</label>
             <input type="text" id="ticketCode" placeholder="Digite o código do ingresso">
             <button id="validateButton">Validar</button>
             <button id="scanQrButton">Escanear QR Code</button>
@@ -176,19 +165,17 @@
     <!-- Modal -->
     <div id="infoModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <span class="close">&times;</span>
-                <h2>Informações do Ingresso</h2>
-            </div>
-            <div class="modal-body">
-                <p><strong>Nome Evento:</strong> <span id="modalEventName"></span></p>
-                <p><strong>CPF do Comprador:</strong> <span id="modalBuyerCpf"></span></p>
-                <p id="modalStatusMessage">Validando informações...</p>
-            </div>
+            <span class="close">&times;</span>
+            <h2>Informações do Ingresso</h2>
+            <div id="iconContainer"></div>
+            <p><strong>Evento:</strong> <span id="modalEventName"></span></p>
+            <p><strong>CPF do Comprador:</strong> <span id="modalBuyerCpf"></span></p>
+            <p id="modalStatusMessage"></p>
+            <button id="finalValidateButton" style="display: none;">Validar Ingresso</button>
         </div>
     </div>
 
-    <!-- Scripts do Firebase -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
@@ -196,7 +183,6 @@
     <script src="/html5-qrcode-master/minified/html5-qrcode.min.js"></script>
 
     <script>
-        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB2JMVHvH8FKs_GEl8JVRoRfPDjY9Ztcf8",
             authDomain: "piauiticketsdb.firebaseapp.com",
@@ -204,67 +190,51 @@
             projectId: "piauiticketsdb",
             storageBucket: "piauiticketsdb.appspot.com",
             messagingSenderId: "372256479753",
-            appId: "1:372256479753:web:8b5890e8c94dc75daaf6d8",
-            measurementId: "G-FMD1R115PG"
+            appId: "1:372256479753:web:8b5890e8c94dc75daaf6d8"
         };
-
-        // Inicializando o Firebase
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        const db = firebase.database();
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const eventDropdown = document.getElementById('eventDropdown');
-            const selectedEventId = document.getElementById('selectedEventId');
             const validateButton = document.getElementById('validateButton');
-            const ticketCodeInput = document.getElementById('ticketCode');
+            const scanQrButton = document.getElementById('scanQrButton');
             const validationMessage = document.getElementById('validationMessage');
             const infoModal = document.getElementById('infoModal');
             const modalEventName = document.getElementById('modalEventName');
             const modalBuyerCpf = document.getElementById('modalBuyerCpf');
             const modalStatusMessage = document.getElementById('modalStatusMessage');
+            const finalValidateButton = document.getElementById('finalValidateButton');
+            const iconContainer = document.getElementById('iconContainer');
             const closeModal = document.querySelector('.close');
             const qrReader = document.getElementById('qr-reader');
-            const scanQrButton = document.getElementById('scanQrButton');
 
-            // Buscar eventos do Firebase
-            database.ref('/eventos').once('value')
-                .then(snapshot => {
-                    const eventos = snapshot.val();
-                    for (const eventId in eventos) {
-                        if (eventos.hasOwnProperty(eventId)) {
-                            const nomeEvento = eventos[eventId].nomeevento;
-                            const option = document.createElement('option');
-                            option.value = eventId;
-                            option.textContent = nomeEvento;
-                            eventDropdown.appendChild(option);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar eventos:', error);
-                });
-
-            // Manipular a seleção de eventos
-            eventDropdown.addEventListener('change', function() {
-                const selectedId = eventDropdown.value;
-                selectedEventId.textContent = selectedId ? selectedId : 'Nenhum evento selecionado';
+            db.ref('/eventos').once('value').then(snapshot => {
+                const eventos = snapshot.val();
+                for (const id in eventos) {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = eventos[id].nomeevento;
+                    eventDropdown.appendChild(option);
+                }
             });
 
-            // Escanear QR Code
-            scanQrButton.addEventListener('click', function() {
+            validateButton.addEventListener('click', () => {
+                validateTicket();
+            });
+
+            scanQrButton.addEventListener('click', () => {
                 if (qrReader.style.display === 'none' || qrReader.style.display === '') {
                     qrReader.style.display = 'block';
                     const html5QrCode = new Html5Qrcode("qr-reader");
                     html5QrCode.start(
                         { facingMode: "environment" },
-                        {
-                            fps: 10,
-                            qrbox: { width: 250, height: 250 }
-                        },
+                        { fps: 10, qrbox: { width: 250, height: 250 } },
                         qrCodeMessage => {
-                            ticketCodeInput.value = qrCodeMessage;
+                            document.getElementById('ticketCode').value = qrCodeMessage;
                             qrReader.style.display = 'none';
                             html5QrCode.stop();
+                            validateTicket();
                         },
                         errorMessage => {
                             console.warn('QR Code scanning error:', errorMessage);
@@ -275,61 +245,60 @@
                 }
             });
 
-            // Validar ingresso
-            validateButton.addEventListener('click', function() {
+            function validateTicket() {
                 const eventId = eventDropdown.value;
-                const ticketCode = ticketCodeInput.value.trim();
+                const ticketCode = document.getElementById('ticketCode').value.trim();
 
                 if (!eventId || !ticketCode) {
-                    validationMessage.textContent = 'Por favor, selecione um evento e insira o código do ingresso.';
-                    validationMessage.className = 'error';
+                    validationMessage.textContent = 'Selecione um evento e insira o código do ingresso.';
+                    validationMessage.style.color = 'red';
                     return;
                 }
 
-                 // Buscar informações do ingresso e mostrar no modal
-                 database.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).once('value')
+                db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).once('value')
                     .then(snapshot => {
-                        const ticketData = snapshot.val();
-                        if (ticketData) {
-                            const nomeEvento = eventDropdown.options[eventDropdown.selectedIndex].text;
-                            const compradorCpf = ticketData.compradorcpf;
+                        const ticket = snapshot.val();
+                        if (ticket) {
+                            modalEventName.textContent = eventDropdown.options[eventDropdown.selectedIndex].text;
+                            modalBuyerCpf.textContent = ticket.compradorcpf;
 
-                            modalEventName.textContent = nomeEvento;
-                            modalBuyerCpf.textContent = compradorCpf;
-                            modalStatusMessage.textContent = 'Validando informações...';
+                            iconContainer.innerHTML = '';
+                            if (ticket.isvalidaded) {
+                                iconContainer.innerHTML = `<span class="icon error">✖</span>`;
+                                modalStatusMessage.textContent = 'Ingresso já validado!';
+                                modalStatusMessage.style.color = '#dc3545';
+                            } else {
+                                iconContainer.innerHTML = `<span class="icon correct">✔</span>`;
+                                modalStatusMessage.textContent = 'Ingresso pode ser validado!';
+                                modalStatusMessage.style.color = '#28a745';
+                                finalValidateButton.style.display = 'inline-block';
+                            }
                             infoModal.style.display = 'block';
-
-                            // Simular validação com delay
-                            setTimeout(() => {
-                                if (ticketData.isvalidaded) {
-                                    modalStatusMessage.textContent = 'Ingresso já validado.';
-                                    modalStatusMessage.className = 'error';
-                                } else {
-                                    modalStatusMessage.textContent = 'Ingresso validado com sucesso!';
-                                    modalStatusMessage.className = 'success';
-                                    database.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).update({
-                                        isvalidaded: true
-                                    });
-                                }
-                            }, 2000);
                         } else {
-                            validationMessage.textContent = 'Código do ingresso não encontrado.';
-                            validationMessage.className = 'error';
+                            validationMessage.textContent = 'Ingresso não encontrado.';
+                            validationMessage.style.color = 'red';
                         }
-                    })
-                    .catch(error => {
-                        console.error('Erro ao validar ingresso:', error);
                     });
+            }
+
+            finalValidateButton.addEventListener('click', () => {
+                const eventId = eventDropdown.value;
+                const ticketCode = document.getElementById('ticketCode').value.trim();
+
+                db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).update({
+                    isvalidaded: true
+                }).then(() => {
+                    modalStatusMessage.textContent = 'Ingresso validado com sucesso!';
+                    modalStatusMessage.style.color = '#28a745';
+                    finalValidateButton.style.display = 'none';
+                });
             });
 
-
-            // Fechar o modal
-            closeModal.addEventListener('click', function() {
+            closeModal.addEventListener('click', () => {
                 infoModal.style.display = 'none';
             });
 
-            // Fechar o modal ao clicar fora dele
-            window.addEventListener('click', function(event) {
+            window.addEventListener('click', (event) => {
                 if (event.target === infoModal) {
                     infoModal.style.display = 'none';
                 }
