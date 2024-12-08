@@ -288,7 +288,7 @@
                 db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).update({
                     isvalidaded: true
                 }).then(() => {
-                    modalStatusMessage.textContent = 'Ingresso validado com sucesso!';
+                    modalStatusMessage.textContent = 'Ingresso validado com sucesso! Libere a entrada do cliente ao Evento.';
                     modalStatusMessage.style.color = '#28a745';
                     finalValidateButton.style.display = 'none';
                 });
