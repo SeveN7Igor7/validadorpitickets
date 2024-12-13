@@ -192,6 +192,7 @@
             <span class="close">&times;</span>
             <h2>Informações do Ingresso</h2>
             <div id="iconContainer"></div>
+            <p><strong>Nome do Comprador:</strong><span id="modalFullName"></span></p>
             <p><strong>Evento:</strong> <span id="modalEventName"></span></p>
             <p><strong>CPF do Comprador:</strong> <span id="modalBuyerCpf"></span></p>
             <p id="modalStatusMessage"></p>
@@ -226,6 +227,7 @@
             const validationMessage = document.getElementById('validationMessage');
             const infoModal = document.getElementById('infoModal');
             const modalEventName = document.getElementById('modalEventName');
+            const modalFullName = document.getElementById('modalFullName');
             const modalBuyerCpf = document.getElementById('modalBuyerCpf');
             const modalStatusMessage = document.getElementById('modalStatusMessage');
             const finalValidateButton = document.getElementById('finalValidateButton');
@@ -284,6 +286,7 @@
                         const ticket = snapshot.val();
                         if (ticket) {
                             modalEventName.textContent = eventDropdown.options[eventDropdown.selectedIndex].text;
+                            modalFullName.textContent = ticket.fullname;
                             modalBuyerCpf.textContent = ticket.compradorcpf;
 
                             iconContainer.innerHTML = '';
