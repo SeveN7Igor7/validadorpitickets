@@ -2,17 +2,16 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Validador PITICKETS</title>
     <script src="/html5-qrcode-master/minified/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
     <header>
         <img src="logo.jpg" alt="Logo PITICKETS" class="logo">
     </header>
-    
+
     <main>
         <section id="event-selector">
             <label for="eventDropdown">Selecione um evento:</label>
@@ -25,7 +24,7 @@
             <input type="text" id="ticketCode" placeholder="Digite o código do ingresso">
             <button id="validateButton">Validar</button>
             <button id="scanQrButton">Escanear QR Code</button>
-            <div id="qr-reader"></div>
+            <div id="qr-reader" style="display: none;"></div>
             <p id="validationMessage"></p>
         </section>
     </main>
@@ -36,7 +35,7 @@
             <span class="close">&times;</span>
             <h2>Informações do Ingresso</h2>
             <div id="iconContainer"></div>
-            <p><strong>Nome do Comprador:</strong><span id="modalFullName"></span></p>
+            <p><strong>Nome do Comprador:</strong> <span id="modalFullName"></span></p>
             <p><strong>Evento:</strong> <span id="modalEventName"></span></p>
             <p><strong>CPF do Comprador:</strong> <span id="modalBuyerCpf"></span></p>
             <p><strong>Tipo:</strong> <span id="modalTicketType"></span></p>
@@ -65,6 +64,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const eventDropdown = document.getElementById('eventDropdown');
             const validateButton = document.getElementById('validateButton');
+            const scanQrButton = document.getElementById('scanQrButton');
             const validationMessage = document.getElementById('validationMessage');
             const infoModal = document.getElementById('infoModal');
             const modalEventName = document.getElementById('modalEventName');
@@ -75,7 +75,9 @@
             const finalValidateButton = document.getElementById('finalValidateButton');
             const iconContainer = document.getElementById('iconContainer');
             const closeModal = document.querySelector('.close');
+            const qrReader = document.getElementById('qr-reader');
 
+            // Carrega eventos
             db.ref('/eventos').once('value').then(snapshot => {
                 const eventos = snapshot.val();
                 for (const id in eventos) {
@@ -86,8 +88,33 @@
                 }
             });
 
+            // Valida ingresso manualmente
             validateButton.addEventListener('click', validateTicket);
 
+            // Escaneia QR Code
+            scanQrButton.addEventListener('click', () => {
+                if (qrReader.style.display === 'none' || qrReader.style.display === '') {
+                    qrReader.style.display = 'block';
+                    const html5QrCode = new Html5Qrcode("qr-reader");
+                    html5QrCode.start(
+                        { facingMode: "environment" },
+                        { fps: 10, qrbox: { width: 250, height: 250 } },
+                        qrCodeMessage => {
+                            document.getElementById('ticketCode').value = qrCodeMessage;
+                            qrReader.style.display = 'none';
+                            html5QrCode.stop();
+                            validateTicket();
+                        },
+                        errorMessage => {
+                            console.warn('QR Code scanning error:', errorMessage);
+                        }
+                    ).catch(err => {
+                        console.error('Erro ao iniciar o escaneamento de QR Code:', err);
+                    });
+                }
+            });
+
+            // Função de validação de ingresso
             function validateTicket() {
                 const eventId = eventDropdown.value;
                 const ticketCode = document.getElementById('ticketCode').value.trim();
@@ -103,18 +130,9 @@
                         const ticket = snapshot.val();
                         if (ticket) {
                             modalEventName.textContent = eventDropdown.options[eventDropdown.selectedIndex].text;
-                            modalFullName.textContent = ticket.fullname || 'N/A';
-                            modalBuyerCpf.textContent = ticket.compradorcpf || 'N/A';
-
-                            if (ticket.tipo) {
-                                modalTicketType.textContent = ticket.tipo;
-                            } else {
-                                db.ref(`/users/cpf/${ticket.compradorcpf}/ingressoscomprados/${ticketCode}`).once('value')
-                                    .then(userSnapshot => {
-                                        const userTicket = userSnapshot.val();
-                                        modalTicketType.textContent = userTicket?.tipo || 'Não especificado';
-                                    });
-                            }
+                            modalFullName.textContent = ticket.fullname;
+                            modalBuyerCpf.textContent = ticket.compradorcpf;
+                            modalTicketType.textContent = ticket.tipo;
 
                             iconContainer.innerHTML = '';
                             if (ticket.isvalidaded) {
@@ -135,6 +153,7 @@
                     });
             }
 
+            // Valida ingresso final no Firebase
             finalValidateButton.addEventListener('click', () => {
                 const eventId = eventDropdown.value;
                 const ticketCode = document.getElementById('ticketCode').value.trim();
@@ -148,6 +167,7 @@
                 });
             });
 
+            // Fecha modal
             closeModal.addEventListener('click', () => {
                 infoModal.style.display = 'none';
             });
