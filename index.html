@@ -127,7 +127,6 @@
         </a>
     </section>
 
-
     <!-- Modal -->
     <div id="infoModal" class="modal">
         <div class="modal-content">
@@ -146,6 +145,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script> <!-- Importando o QR Code reader -->
 
     <script>
         const firebaseConfig = {
@@ -187,33 +187,9 @@
                 }
             });
 
-            // Valida ingresso manualmente
             validateButton.addEventListener('click', validateTicket);
 
-            // Escaneia QR Code
-            scanQrButton.addEventListener('click', () => {
-                if (qrReader.style.display === 'none' || qrReader.style.display === '') {
-                    qrReader.style.display = 'block';
-                    const html5QrCode = new Html5Qrcode("qr-reader");
-                    html5QrCode.start(
-                        { facingMode: "environment" },
-                        { fps: 10, qrbox: { width: 250, height: 250 } },
-                        qrCodeMessage => {
-                            document.getElementById('ticketCode').value = qrCodeMessage;
-                            qrReader.style.display = 'none';
-                            html5QrCode.stop();
-                            validateTicket();
-                        },
-                        errorMessage => {
-                            console.warn('QR Code scanning error:', errorMessage);
-                        }
-                    ).catch(err => {
-                        console.error('Erro ao iniciar o escaneamento de QR Code:', err);
-                    });
-                }
-            });
-
-            // Função de validação de ingresso
+            // Função para validar ingresso
             function validateTicket() {
                 const eventId = eventDropdown.value;
                 const ticketCode = document.getElementById('ticketCode').value.trim();
@@ -229,9 +205,18 @@
                         const ticket = snapshot.val();
                         if (ticket) {
                             modalEventName.textContent = eventDropdown.options[eventDropdown.selectedIndex].text;
-                            modalFullName.textContent = ticket.fullname;
-                            modalBuyerCpf.textContent = ticket.compradorcpf;
-                            modalTicketType.textContent = ticket.tipo;
+                            modalFullName.textContent = ticket.fullname || 'N/A';
+                            modalBuyerCpf.textContent = ticket.compradorcpf || 'N/A';
+
+                            if (ticket.tipo) {
+                                modalTicketType.textContent = ticket.tipo;
+                            } else {
+                                db.ref(`/users/cpf/${ticket.compradorcpf}/ingressoscomprados/${ticketCode}`).once('value')
+                                    .then(userSnapshot => {
+                                        const userTicket = userSnapshot.val();
+                                        modalTicketType.textContent = userTicket?.tipo || 'Não especificado';
+                                    });
+                            }
 
                             iconContainer.innerHTML = '';
                             if (ticket.isvalidaded) {
@@ -252,7 +237,29 @@
                     });
             }
 
-            // Valida ingresso final no Firebase
+            // Função para ativar o escaneamento do QR Code
+            scanQrButton.addEventListener('click', () => {
+                if (qrReader.style.display === 'none' || qrReader.style.display === '') {
+                    qrReader.style.display = 'block';
+                    const html5QrCode = new Html5Qrcode("qr-reader");
+                    html5QrCode.start(
+                        { facingMode: "environment" },
+                        { fps: 10, qrbox: { width: 250, height: 250 } },
+                        qrCodeMessage => {
+                            document.getElementById('ticketCode').value = qrCodeMessage;
+                            qrReader.style.display = 'none';
+                            html5QrCode.stop();
+                            validateTicket(); // Após escanear, valida o ingresso automaticamente
+                        },
+                        errorMessage => {
+                            console.warn('Erro ao escanear QR Code:', errorMessage);
+                        }
+                    ).catch(err => {
+                        console.error('Erro ao iniciar o escaneamento:', err);
+                    });
+                }
+            });
+
             finalValidateButton.addEventListener('click', () => {
                 const eventId = eventDropdown.value;
                 const ticketCode = document.getElementById('ticketCode').value.trim();
@@ -266,7 +273,6 @@
                 });
             });
 
-            // Fecha modal
             closeModal.addEventListener('click', () => {
                 infoModal.style.display = 'none';
             });
