@@ -53,6 +53,38 @@
         width: 24px;
         height: 24px;
     }
+    #restricted-info {
+    background-color: #ffffff; /* Fundo branco para um visual limpo */
+    border-radius: 10px; /* Bordas arredondadas */
+    padding: 25px; /* Espaçamento interno maior */
+    margin: 30px auto; /* Centralizado na página */
+    max-width: 900px; /* Largura máxima */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); /* Sombra suave */
+    font-family: 'Roboto', Arial, sans-serif; /* Fonte profissional */
+    line-height: 1.8; /* Espaçamento entre linhas */
+}
+
+#restricted-info h3 {
+    font-size: 1.8em; /* Título maior */
+    color: #000000; /* Azul escuro para o título */
+    text-align: center; /* Centralizado */
+    margin-bottom: 20px; /* Espaçamento abaixo do título */
+    text-transform: uppercase; /* Tudo em maiúsculas */
+    font-weight: 700; /* Título mais destacado */
+}
+
+#restricted-info p {
+    font-size: 1.1em; /* Tamanho da fonte maior */
+    color: #333; /* Texto em cinza escuro */
+    margin-bottom: 15px; /* Espaçamento entre parágrafos */
+    text-align: justify; /* Justificado para alinhamento perfeito */
+}
+
+#restricted-info p strong {
+    color: #000000; /* Destaque em azul */
+    font-weight: 600; /* Texto em negrito */
+}
+
     </style>
 </head>
 <body>
@@ -62,9 +94,7 @@
 
     <main>
         <section id="event-selector">
-            <p><strong>Essa é uma área restrita e desenvolvida apenas para os organizadores e produtores de eventos.</strong></p>
-            <p><strong>Não nos responsabilizamos pelo uso indevido e incorreto da ferramenta.</strong></p>
-            <p><strong>Selecione e se atente ao evento selecionado para a validação do Ingressos. Cada Evento tem o armazenamento próprio dos ingressos vendidos.</strong></p>
+            <p><strong>Antes de usar essa ferramenta, por favor, leia as informações no final da página.</strong></p>
             <label for="eventDropdown">Selecione um evento:</label>
             <select id="eventDropdown">
                 <option value="">Selecione um evento</option>
@@ -89,6 +119,14 @@
             Falar no WhatsApp
         </a>
     </section>
+
+    <section id="restricted-info">
+        <h3>Informações Importantes</h3>
+        <p><strong>Essa é uma área restrita e desenvolvida apenas para os organizadores e produtores de eventos.</strong></p>
+        <p><strong>Não nos responsabilizamos pelo uso indevido e incorreto da ferramenta.</strong></p>
+        <p><strong>Selecione e se atente ao evento selecionado para a validação do Ingressos. Cada Evento tem o armazenamento próprio dos ingressos vendidos.</strong></p>
+    </section>
+
 
     <!-- Modal -->
     <div id="infoModal" class="modal">
