@@ -239,53 +239,58 @@
             }
     
             finalValidateButton.addEventListener('click', () => {
-                const eventId = eventDropdown.value;
-                const ticketCode = ticketCodeInput.value.trim();
-                const today = new Date();
-                const currentDate = today.getDate(); // Pega o dia de hoje (22 por exemplo)
+            const eventId = eventDropdown.value;
+            const ticketCode = ticketCodeInput.value.trim();
+            const today = new Date();
+            const currentDate = today.getDate(); // Pega o dia de hoje (22 por exemplo)
     
-                db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).once('value')
-                    .then(snapshot => {
-                        const ticket = snapshot.val();
-        
-                        // Verificar se o tipo de ingresso corresponde a um dos tipos definidos
-                        const ticketType = ticket.tipo || '';
-                        const validTicketTypes = [
-                            'Dia 25|01 e 08|02',
-                            'Dia 25|01 e 22|02',
-                            'Dia 08|02 e 22|02',
-                            'Passaporte Completo'
-                        ];
-        
-                        if (validTicketTypes.includes(ticketType)) {
-                            // Verifica se o ingresso já foi validado na mesma data
-                            const validadedDate = ticket.validadeddate;
-                            const validadedDay1 = ticket.validadedday1;
-        
-                            if (validadedDay1 && validadedDate == currentDate) {
-                                // Se o ingresso já foi validado no mesmo dia, informar ao cliente
-                                modalStatusMessage.textContent = `Este ingresso já foi validado hoje, no dia ${currentDate}. Somente será validado em outra data anunciada pelo produtor.`;
-                                modalStatusMessage.style.color = '#dc3545';
-                                finalValidateButton.style.display = 'none';
-                                return; // Impede a validação duplicada
-                            } else {
-                                // Criação das novas keys validadedday1 e validadeddate
-                                db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).update({
-                                    validadedday1: true,
-                                    validadeddate: currentDate
-                                }).then(() => {
-                                    modalStatusMessage.textContent = `Ingresso validado com sucesso para o evento do dia ${currentDate}!`;
-                                    modalStatusMessage.style.color = '#28a745';
-                                    finalValidateButton.style.display = 'none';
-                                });
-                            }
-                        } else {
-                            modalStatusMessage.textContent = 'Tipo de ingresso não correspondente aos critérios de validação para hoje.';
+            db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).once('value')
+                .then(snapshot => {
+                    const ticket = snapshot.val();
+    
+                    // Verificar se o tipo de ingresso corresponde a um dos tipos definidos
+                    const ticketType = ticket.tipo || '';
+                    const validTicketTypes = [
+                        'Dia 25|01 e 08|02',
+                        'Dia 25|01 e 22|02',
+                        'Dia 08|02 e 22|02',
+                        'Passaporte Completo'
+                    ];
+    
+                    if (validTicketTypes.includes(ticketType)) {
+                        // Verifica se o ingresso já foi validado na mesma data
+                        const validadedDate = ticket.validadeddate;
+                        const validadedDay1 = ticket.validadedday1;
+    
+                        if (validadedDay1 && validadedDate == currentDate) {
+                            // Se o ingresso já foi validado no mesmo dia, informar ao cliente
+                            modalStatusMessage.textContent = `Este ingresso já foi validado hoje, no dia ${currentDate}. Somente será validado em outra data anunciada pelo produtor.`;
                             modalStatusMessage.style.color = '#dc3545';
                             finalValidateButton.style.display = 'none';
+                            return; // Impede a validação duplicada
+                        } else {
+                            // Criação das novas keys validadedday1 e validadeddate
+                            db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).update({
+                                validadedday1: true,
+                                validadeddate: currentDate
+                            }).then(() => {
+                                modalStatusMessage.textContent = `Ingresso validado com sucesso para o evento do dia ${currentDate}!`;
+                                modalStatusMessage.style.color = '#28a745';
+                                finalValidateButton.style.display = 'none';
+                            });
                         }
-                    });
-            });
+                    } else {
+                        // Para ingressos que não estão nos tipos listados, valida normalmente
+                        db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).update({
+                            isvalidaded: true
+                        }).then(() => {
+                            modalStatusMessage.textContent = 'Ingresso validado com sucesso!';
+                            modalStatusMessage.style.color = '#28a745';
+                            finalValidateButton.style.display = 'none';
+                        });
+                    }
+                });
+        });
     
             // Função de escaneamento do QR Code
             scanQrButton.addEventListener('click', () => {
