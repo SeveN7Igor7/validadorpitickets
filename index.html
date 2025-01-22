@@ -5,164 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Validador PITICKETS</title>
     <script src="/html5-qrcode-master/minified/html5-qrcode.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        header {
-            background-color: #000000;
-            color: #fff;
-            text-align: center;
-            padding: 1rem 0;
-        }
-        header .logo {
-            height: 40px;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-
-
-        main {
-            padding: 2rem;
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        select, input, button {
-            margin-top: 0.5rem;
-            padding: 0.5rem;
-            width: 100%;
-            max-width: 300px;
-        }
-
-        button {
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 1rem;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-
-        .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 1; 
-            left: 0;
-            top: 0;
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgba(0,0,0,0.5); 
-            padding-top: 60px; 
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto; 
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%; 
-            max-width: 600px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            text-align: center;
-        }
-
-        .close {
-            color: white;
-            position: absolute;
-            right: 20px;
-            top: 10px;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover {
-            color: #ddd;
-        }
-
-        .icon {
-            font-size: 4rem;
-            margin: 20px 0;
-        }
-
-        .icon.correct {
-            color: #28a745;
-            animation: bounceIn 1s ease;
-        }
-
-        .icon.error {
-            color: #dc3545;
-            animation: shake 0.5s ease;
-        }
-
-        @keyframes bounceIn {
-            0% {
-                transform: scale(0.3);
-                opacity: 0;
-            }
-            50% {
-                transform: scale(1.1);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        @keyframes shake {
-            0% {
-                transform: translateX(0);
-            }
-            25% {
-                transform: translateX(-5px);
-            }
-            50% {
-                transform: translateX(5px);
-            }
-            75% {
-                transform: translateX(-5px);
-            }
-            100% {
-                transform: translateX(0);
-            }
-        }
-
-        #qr-reader {
-            display: none;
-            margin-top: 20px;
-        }
-
-        @media (max-width: 600px) {
-    header {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    header .logo {
-        height: 150px;
-        margin-right: 500px;
-    }
-
-    header h1 {
-        font-size: 1.2rem;
-    }
-}
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body>
     <header>
@@ -195,6 +39,7 @@
             <p><strong>Nome do Comprador:</strong><span id="modalFullName"></span></p>
             <p><strong>Evento:</strong> <span id="modalEventName"></span></p>
             <p><strong>CPF do Comprador:</strong> <span id="modalBuyerCpf"></span></p>
+            <p><strong>Tipo:</strong> <span id="modalTicketType"></span></p>
             <p id="modalStatusMessage"></p>
             <button id="finalValidateButton" style="display: none;">Validar Ingresso</button>
         </div>
@@ -203,9 +48,6 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-    <!-- QR Code Scanner -->
-    <script src="/html5-qrcode-master/minified/html5-qrcode.min.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -223,17 +65,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             const eventDropdown = document.getElementById('eventDropdown');
             const validateButton = document.getElementById('validateButton');
-            const scanQrButton = document.getElementById('scanQrButton');
             const validationMessage = document.getElementById('validationMessage');
             const infoModal = document.getElementById('infoModal');
             const modalEventName = document.getElementById('modalEventName');
             const modalFullName = document.getElementById('modalFullName');
             const modalBuyerCpf = document.getElementById('modalBuyerCpf');
+            const modalTicketType = document.getElementById('modalTicketType');
             const modalStatusMessage = document.getElementById('modalStatusMessage');
             const finalValidateButton = document.getElementById('finalValidateButton');
             const iconContainer = document.getElementById('iconContainer');
             const closeModal = document.querySelector('.close');
-            const qrReader = document.getElementById('qr-reader');
 
             db.ref('/eventos').once('value').then(snapshot => {
                 const eventos = snapshot.val();
@@ -245,31 +86,7 @@
                 }
             });
 
-            validateButton.addEventListener('click', () => {
-                validateTicket();
-            });
-
-            scanQrButton.addEventListener('click', () => {
-                if (qrReader.style.display === 'none' || qrReader.style.display === '') {
-                    qrReader.style.display = 'block';
-                    const html5QrCode = new Html5Qrcode("qr-reader");
-                    html5QrCode.start(
-                        { facingMode: "environment" },
-                        { fps: 10, qrbox: { width: 250, height: 250 } },
-                        qrCodeMessage => {
-                            document.getElementById('ticketCode').value = qrCodeMessage;
-                            qrReader.style.display = 'none';
-                            html5QrCode.stop();
-                            validateTicket();
-                        },
-                        errorMessage => {
-                            console.warn('QR Code scanning error:', errorMessage);
-                        }
-                    ).catch(err => {
-                        console.error('Erro ao iniciar o escaneamento de QR Code:', err);
-                    });
-                }
-            });
+            validateButton.addEventListener('click', validateTicket);
 
             function validateTicket() {
                 const eventId = eventDropdown.value;
@@ -286,8 +103,18 @@
                         const ticket = snapshot.val();
                         if (ticket) {
                             modalEventName.textContent = eventDropdown.options[eventDropdown.selectedIndex].text;
-                            modalFullName.textContent = ticket.fullname;
-                            modalBuyerCpf.textContent = ticket.compradorcpf;
+                            modalFullName.textContent = ticket.fullname || 'N/A';
+                            modalBuyerCpf.textContent = ticket.compradorcpf || 'N/A';
+
+                            if (ticket.tipo) {
+                                modalTicketType.textContent = ticket.tipo;
+                            } else {
+                                db.ref(`/users/cpf/${ticket.compradorcpf}/ingressoscomprados/${ticketCode}`).once('value')
+                                    .then(userSnapshot => {
+                                        const userTicket = userSnapshot.val();
+                                        modalTicketType.textContent = userTicket?.tipo || 'Não especificado';
+                                    });
+                            }
 
                             iconContainer.innerHTML = '';
                             if (ticket.isvalidaded) {

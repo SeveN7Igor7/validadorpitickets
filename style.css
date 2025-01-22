@@ -1,0 +1,119 @@
+/* Ajuste global para evitar rolagem horizontal */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden; /* Evita rolagem lateral */
+}
+
+header {
+    background-color: #000000;
+    color: #fff;
+    text-align: center;
+    padding: 1rem 0;
+    width: 100%; /* Garante que o header não ultrapasse a tela */
+    box-sizing: border-box; /* Inclui padding na largura total */
+}
+
+main {
+    padding: 2rem;
+    max-width: 100%; /* Garante que main não ultrapasse a largura da tela */
+    width: 100%;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+select, input, button {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    width: 100%;
+    max-width: 300px;
+    box-sizing: border-box; /* Inclui padding na largura total */
+}
+
+button {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Evita rolagem dentro do modal */
+    background-color: rgba(0, 0, 0, 0.5);
+    padding-top: 10px;
+    box-sizing: border-box;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%; /* Garante que o modal nunca ultrapasse a largura */
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.close {
+    color: #000;
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #dc3545;
+}
+
+@media (max-width: 600px) {
+    header {
+        text-align: center;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    header .logo {
+        height: 100px;
+        margin: 0 auto;
+        display: block;
+    }
+
+    main {
+        padding: 1rem;
+        border-radius: 5px;
+    }
+
+    .modal-content {
+        padding: 15px;
+        width: 95%; /* Garante que o modal fique dentro da tela */
+        margin: 10% auto;
+    }
+
+    button {
+        font-size: 0.9rem;
+    }
+}
