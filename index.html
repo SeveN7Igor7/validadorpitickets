@@ -6,6 +6,54 @@
     <title>Validador PITICKETS</title>
     <script src="/html5-qrcode-master/minified/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+         #help-section {
+        margin: 20px auto;
+        padding: 15px;
+        text-align: center;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        max-width: 600px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #help-section h3 {
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    #help-section p {
+        color: #6c757d;
+        font-size: 16px;
+        margin: 10px 0;
+    }
+
+    #help-section .whatsapp-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #fff;
+        background-color: #25d366;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    #help-section .whatsapp-button:hover {
+        background-color: #1ebe5d;
+    }
+
+    #help-section .whatsapp-button img {
+        margin-right: 8px;
+        width: 24px;
+        height: 24px;
+    }
+    </style>
 </head>
 <body>
     <header>
@@ -31,6 +79,16 @@
             <p id="validationMessage"></p>
         </section>
     </main>
+
+    <section id="help-section">
+        <h3>Aconteceu algum erro? Precisa de ajuda?</h3>
+        <p>Entre em contato direto comigo, respondo rápido.</p>
+        <a href="https://wa.me/5589994582600?text=Equipe%20de%20validação%20de%20Ingressos%20aqui,%20preciso%20de%20suporte%20urgente." 
+           class="whatsapp-button" target="_blank">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+            Falar no WhatsApp
+        </a>
+    </section>
 
     <!-- Modal -->
     <div id="infoModal" class="modal">
