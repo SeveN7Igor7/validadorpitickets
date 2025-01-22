@@ -109,14 +109,14 @@
             <p id="validationMessage"></p>
         </section>
     </main>
-
+    
     <section id="restricted-info">
         <h3>Informações Importantes</h3>
         <p><strong>Essa é uma área restrita e desenvolvida apenas para os organizadores e produtores de eventos.</strong></p>
         <p><strong>Não nos responsabilizamos pelo uso indevido e incorreto da ferramenta.</strong></p>
         <p><strong>Selecione e se atente ao evento selecionado para a validação do Ingressos. Cada Evento tem o armazenamento próprio dos ingressos vendidos.</strong></p>
     </section>
-
+    
     <section id="help-section">
         <h3>Aconteceu algum erro? Precisa de ajuda?</h3>
         <p>Entre em contato direto comigo, respondo rápido.</p>
@@ -126,7 +126,7 @@
             Falar no WhatsApp
         </a>
     </section>
-
+    
     <!-- Modal -->
     <div id="infoModal" class="modal">
         <div class="modal-content">
@@ -141,12 +141,12 @@
             <button id="finalValidateButton" style="display: none;">Validar Ingresso</button>
         </div>
     </div>
-
+    
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script> <!-- Importando o QR Code reader -->
-
+    
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyB2JMVHvH8FKs_GEl8JVRoRfPDjY9Ztcf8",
@@ -159,7 +159,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-    
+        
         document.addEventListener('DOMContentLoaded', () => {
             const eventDropdown = document.getElementById('eventDropdown');
             const validateButton = document.getElementById('validateButton');
@@ -173,7 +173,11 @@
             const finalValidateButton = document.getElementById('finalValidateButton');
             const iconContainer = document.getElementById('iconContainer');
             const closeModal = document.querySelector('.close');
+            const qrReader = document.getElementById('qr-reader');
+            const scanQrButton = document.getElementById('scanQrButton');
+            const ticketCodeInput = document.getElementById('ticketCode');
     
+            // Configuração do Firebase
             db.ref('/eventos').once('value').then(snapshot => {
                 const eventos = snapshot.val();
                 for (const id in eventos) {
@@ -184,13 +188,13 @@
                 }
             });
     
+            // Validar ingresso
             validateButton.addEventListener('click', validateTicket);
     
             // Função para validar ingresso
             function validateTicket() {
                 const eventId = eventDropdown.value;
-                const ticketCode = document.getElementById('ticketCode').value.trim();
-    
+                const ticketCode = ticketCodeInput.value.trim();
                 if (!eventId || !ticketCode) {
                     validationMessage.textContent = 'Selecione um evento e insira o código do ingresso.';
                     validationMessage.style.color = 'red';
@@ -236,14 +240,14 @@
     
             finalValidateButton.addEventListener('click', () => {
                 const eventId = eventDropdown.value;
-                const ticketCode = document.getElementById('ticketCode').value.trim();
+                const ticketCode = ticketCodeInput.value.trim();
                 const today = new Date();
                 const currentDate = today.getDate(); // Pega o dia de hoje (22 por exemplo)
     
                 db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).once('value')
                     .then(snapshot => {
                         const ticket = snapshot.val();
-    
+        
                         // Verificar se o tipo de ingresso corresponde a um dos tipos definidos
                         const ticketType = ticket.tipo || '';
                         const validTicketTypes = [
@@ -252,12 +256,12 @@
                             'Dia 08|02 e 22|02',
                             'Passaporte Completo'
                         ];
-    
+        
                         if (validTicketTypes.includes(ticketType)) {
                             // Verifica se o ingresso já foi validado na mesma data
                             const validadedDate = ticket.validadeddate;
                             const validadedDay1 = ticket.validadedday1;
-    
+        
                             if (validadedDay1 && validadedDate == currentDate) {
                                 // Se o ingresso já foi validado no mesmo dia, informar ao cliente
                                 modalStatusMessage.textContent = `Este ingresso já foi validado hoje, no dia ${currentDate}. Somente será validado em outra data anunciada pelo produtor.`;
@@ -270,26 +274,41 @@
                                     validadedday1: true,
                                     validadeddate: currentDate
                                 }).then(() => {
-                                    modalStatusMessage.textContent = `Ingresso validado com sucesso! Data da validação: ${currentDate}.`;
+                                    modalStatusMessage.textContent = `Ingresso validado com sucesso para o evento do dia ${currentDate}!`;
                                     modalStatusMessage.style.color = '#28a745';
                                     finalValidateButton.style.display = 'none';
-                                }).catch(err => {
-                                    console.error('Erro ao atualizar ingresso:', err);
                                 });
                             }
                         } else {
-                            // Caso contrário, realiza a validação normal
-                            db.ref(`/ingressos/${eventId}/disponiveis/${ticketCode}`).update({
-                                isvalidaded: true
-                            }).then(() => {
-                                modalStatusMessage.textContent = 'Ingresso validado com sucesso!';
-                                modalStatusMessage.style.color = '#28a745';
-                                finalValidateButton.style.display = 'none';
-                            }).catch(err => {
-                                console.error('Erro ao atualizar ingresso:', err);
-                            });
+                            modalStatusMessage.textContent = 'Tipo de ingresso não correspondente aos critérios de validação para hoje.';
+                            modalStatusMessage.style.color = '#dc3545';
+                            finalValidateButton.style.display = 'none';
                         }
                     });
+            });
+    
+            // Função de escaneamento do QR Code
+            scanQrButton.addEventListener('click', () => {
+                qrReader.style.display = 'block';
+                const html5QrCode = new Html5Qrcode("qr-reader");
+                html5QrCode.start(
+                    { facingMode: "environment" }, // Câmera traseira
+                    {
+                        fps: 10,    // frames per second
+                        qrbox: 250  // Tamanho da área de escaneamento
+                    },
+                    (decodedText, decodedResult) => {
+                        // Preencher o código do ingresso com o texto decodificado
+                        ticketCodeInput.value = decodedText;
+                        qrReader.style.display = 'none';
+                        html5QrCode.stop();
+                    },
+                    (errorMessage) => {
+                        console.error(errorMessage);
+                    }
+                ).catch(err => {
+                    console.error("Erro ao iniciar o scanner: ", err);
+                });
             });
     
             closeModal.addEventListener('click', () => {
