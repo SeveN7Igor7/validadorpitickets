@@ -98,16 +98,24 @@
             const scanQrButton = document.getElementById('scanQrButton');
             const ticketCodeInput = document.getElementById('ticketCode');
     
-            // Configuração do Firebase
             db.ref('/eventos').once('value').then(snapshot => {
-                const eventos = snapshot.val();
-                for (const id in eventos) {
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.textContent = eventos[id].nomeevento;
-                    eventDropdown.appendChild(option);
-                }
-            });
+    const eventos = snapshot.val();
+    for (const id in eventos) {
+        const evento = eventos[id];
+        
+        // Se 'validadorvisible' estiver definido como false, pula esse evento
+        if (evento.hasOwnProperty('validadorvisible') && evento.validadorvisible === false) {
+            console.log(`Evento "${evento.nomeevento}" ocultado por validadorvisible=false`);
+            continue;
+        }
+
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = evento.nomeevento;
+        eventDropdown.appendChild(option);
+    }
+});
+
     
             // Validar ingresso
             validateButton.addEventListener('click', validateTicket);
